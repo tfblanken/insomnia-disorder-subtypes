@@ -1,5 +1,5 @@
 ##########################################################################################
-### R script to see how classes relate to different other variables (step-3 like analysis)
+### Script to investigate hyperarousal across subtypes (ESRS)
 ###   - construct an mgm network to see how class-membership (nominal variable) relates to:
 ###       - isi (sleep)
 ###       - psqi (sleep)
@@ -12,43 +12,43 @@ rm(list = ls())
 
 ### Load libraries
 require(qgraph)
-#require(xlsx)
-#require(scales)
-#require(MatchIt)
 require(mgm)
 
 
 ### Load data
-setwd("~/Dropbox (S&C)/NIN/01_Projects/01_LCA/00_DataAnalysesComplete/Data")
+setwd("/Users/tessablanken/surfdrive/NIN/01_Projects/01_LCA/00_DataAnalysesComplete/Data")
 dataIns <- read.csv("VarMissMax16_scored_NewOrder.csv")
 data    <- dataIns
+table(dataIns$Cluster)
 
 
 ### Load data for controls
-setwd("~/Dropbox (S&C)/NIN/01_Projects/01_LCA/00_DataAnalysesComplete/Data")
-dataControl <- read.csv("VarMissMax16_controls.csv")
+#setwd("~/Dropbox (S&C)/NIN/01_Projects/01_LCA/00_DataAnalysesComplete/Data")
+#dataControl <- read.csv("VarMissMax16_controls.csv")
 
 
 ### Load data other variables
-setwd("~/Dropbox (S&C)/NIN/01_Projects/01_LCA/zz_DataAnalysesComplete_ddPre0920/01_DataSets/0.SubsequentAnalyses/170130_MGMdata")
-isi.items <- read.csv("isi_items.csv")
-isi.total <- read.csv("isi.csv")
-psqi      <- read.csv("psqi.csv")
-psqi_D    <- read.csv("psqi_duration.csv")
-qol       <- read.csv("qol.csv")
-hads      <- read.csv("hads.csv")
+setwd("/Users/tessablanken/surfdrive/NIN/01_Projects/00_CompletedProjects/2017_Subtype_OriginalAnalyses/02_NSR/Data/Scale")
+has       <- read.csv("has_items.csv")
+#isi.items <- read.csv("isi_items.csv")
+#isi.total <- read.csv("isi.csv")
+#psqi      <- read.csv("psqi.csv")
+#psqi_D    <- read.csv("psqi_duration.csv")
+#qol       <- read.csv("qol.csv")
+#hads      <- read.csv("hads.csv")
 #ids       <- read.csv("ids.csv") # removed ids because of too many missings
-swls      <- read.csv("swls.csv")
-hsp       <- read.csv("hsp.csv")
+#swls      <- read.csv("swls.csv")
+#hsp       <- read.csv("hsp.csv")
 
 
 ### Keep only composite scores (for now) + subject for each variable
-psqi   <- psqi[, c("subject", "PSQI")]
-psqi_D <- psqi_D[, c('subject', "dur")]
-qol    <- qol[, c("subject", "SF36_PCS", "SF36_MCS")]
-hads   <- hads[, c("subject", "hads_anxiety", "hads_depression")]
-swls   <- swls[, c("subject", "swls")]
-hsp    <- hsp[, c("subject", "hsp")]
+has     <- has[, c(paste0('AROUSE_Q', 13:24), 'subject')]
+#psqi   <- psqi[, c("subject", "PSQI")]
+#psqi_D <- psqi_D[, c('subject', "dur")]
+#qol    <- qol[, c("subject", "SF36_PCS", "SF36_MCS")]
+#hads   <- hads[, c("subject", "hads_anxiety", "hads_depression")]
+#swls   <- swls[, c("subject", "swls")]
+#hsp    <- hsp[, c("subject", "hsp")]
 
 
 
@@ -60,12 +60,10 @@ order(table(data$Cluster), decreasing = TRUE)
 
 ###   Select participants: 
 Clust <- data[, c("subject", "Cluster")] # for ins ppn (including cluster membership)
-Incl  <- as.data.frame(dataControl[, "subject"]); colnames(Incl) <- "subject"
+#Incl  <- as.data.frame(dataControl[, "subject"]); colnames(Incl) <- "subject"
 
 ###   Select variables
-include <- list(Clust, isi.total, psqi, qol, hads, swls, hsp) # select for insomnia 
-include <- list(Incl, #isi.items, psqi_D, # comment isi.items + psqi_D out when running mgm analyses 
-                isi.total, psqi, qol, hads, swls, hsp) # select for controls
+include <- list(Clust, has) # select for insomnia 
 
 data   = Reduce(function(...) merge(..., by = "subject", all.x = TRUE), include)
 
@@ -76,15 +74,26 @@ prop.table(table(complete$Cluster)) # corresponds roughly to percentages in used
 
 
 ### mgm network including class-membership as a nominal node (N = 715)
-mymgm <- mgmfit(complete[, -1], type = c("c", rep("g", 8)), lev = c(5, rep(1, 8)))
-round(mymgm$wadj,2)
+mymgm <- mgm(complete[, -1], type = c("c", rep("g", 12)), lev = c(5, rep(1, 12)))
+round(mymgm$pairwise$wadj,2)
 
 nodeLabels = c("Cluster", "ISI", "PSQI", "SF36\nPhys", 
                "SF36\nMental",  "HADS\nAnx", "HADS\nDep", "SWLS", "HSP")
 
-qgraph(mymgm$wadj, labels = nodeLabels, shape = c("square", rep("circle", 8)),
+qgraph(mymgm$pairwise$wadj, #labels = nodeLabels, 
+       shape = c("square", rep("circle", 12)),
        layout = "spring", edge.color = mymgm$edgecolor,
        label.cex = .8, label.prop = .8, label.scale.equal = TRUE)
+
+
+#----- TOT HIER VERWERKT VOOR HYPERAROUSAL ----
+
+
+
+
+
+
+
 
 
 ### network analysis on control data set (N = 833)
